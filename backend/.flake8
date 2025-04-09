@@ -1,0 +1,22 @@
+[flake8]
+max-line-length = 100
+ignore = 
+    # Ignorer les lignes trop longues
+    E501,
+    # Ignorer les espaces en fin de ligne
+    W291,
+    # Ignorer les lignes vides avec des espaces
+    W293,
+    # Ignorer les imports non utilisés
+    F401,
+    # Ignorer les lignes vides après les classes
+    E302,
+    # Ignorer les lignes vides après les fonctions
+    E305
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.pyc,
+    *.egg-info 

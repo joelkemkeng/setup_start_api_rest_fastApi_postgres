@@ -1,0 +1,102 @@
+# Version de l'API Docker Compose à utiliser
+version: '3.8'
+
+# Définition des services (conteneurs) que nous allons exécuter
+services:
+  # Service pour notre API backend en FastAPI
+  backend:
+    # Instructions pour construire l'image Docker pour ce service
+    build:
+      # Emplacement du code source relatif à ce fichier docker-compose.yml
+      context: .
+      # Nom du fichier Dockerfile à utiliser
+      dockerfile: Dockerfile.backend
+    # Nom du conteneur pour l'identifier facilement
+    container_name: mobile_musician_api
+    # Commande à exécuter quand le conteneur démarre
+    # --reload: recharge l'application quand le code change
+    # --workers 1: un seul processeur pour servir les requêtes
+    # --host 0.0.0.0: écoute sur toutes les interfaces réseau
+    # --port 8000: utilise le port 8000
+    command: bash -c "cd backend && uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 8000"
+    # Montage de volumes - mappe le dossier local au dossier dans le conteneur
+    # Cela permet de voir les changements de code sans reconstruire l'image
+    volumes:
+      - .:/workspace
+    # Mappage des ports - connecte le port 8000 du conteneur au port 8000 de l'hôte
+    ports:
+      - "8000:8000"
+    # Variables d'environnement pour configurer l'application
+    environment:
+      # URL de connexion à la base de données PostgreSQL
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/mobile_musician
+      # Clé secrète pour signer les jetons JWT (peut être remplacée par une variable d'environnement)
+      - SECRET_KEY=${SECRET_KEY:-supersecretkey}
+      # Algorithme de chiffrement pour les jetons JWT
+      - ALGORITHM=${ALGORITHM:-HS256}
+      # Durée de validité des jetons d'accès en minutes
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    # Ce service dépend du service db et attendra qu'il démarre
+    depends_on:
+      - db
+    # Réseau auquel le conteneur est connecté
+    networks:
+      - mobile_musician_network
+
+  # Service de base de données PostgreSQL
+  db:
+    # Utilise l'image officielle PostgreSQL version 14 avec Alpine Linux (plus légère)
+    image: postgres:14-alpine
+    # Nom du conteneur pour l'identifier facilement
+    container_name: mobile_musician_db
+    # Stockage persistant pour les données de la base
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    # Mappage des ports - connecte le port 5432 du conteneur au port 5432 de l'hôte
+    ports:
+      - "5432:5432"
+    # Variables d'environnement pour configurer PostgreSQL
+    environment:
+      # Nom d'utilisateur pour se connecter à PostgreSQL
+      - POSTGRES_USER=postgres
+      # Mot de passe pour se connecter à PostgreSQL
+      - POSTGRES_PASSWORD=postgres
+      # Nom de la base de données à créer automatiquement
+      - POSTGRES_DB=mobile_musician
+    # Réseau auquel le conteneur est connecté
+    networks:
+      - mobile_musician_network
+
+  # Service pgAdmin pour gérer la base de données
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: mobile_musician_pgadmin
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@hetic.eu
+      - PGADMIN_DEFAULT_PASSWORD=admin
+      - PGADMIN_SERVER_JSON_FILE=/pgadmin4/servers.json
+    ports:
+      - "5050:80"
+    volumes:
+      - ./config/pgadmin/servers.json:/pgadmin4/servers.json
+      - ./config/pgadmin/pgpass:/pgpass
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - db
+    networks:
+      - mobile_musician_network
+
+# Définition des volumes persistants
+volumes:
+  # Volume pour stocker les données PostgreSQL de façon persistante
+  # Cela permet de conserver les données même si le conteneur est supprimé
+  postgres_data:
+  # Volume pour stocker les données de pgAdmin
+  pgadmin_data:
+
+# Définition des réseaux pour l'isolation et la communication entre conteneurs
+networks:
+  # Réseau personnalisé pour nos services
+  mobile_musician_network:
+    # Type de pilote réseau
+    driver: bridge

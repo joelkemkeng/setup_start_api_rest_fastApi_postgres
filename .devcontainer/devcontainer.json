@@ -1,0 +1,42 @@
+{
+    "name": "Mobile Musician FastAPI Development",
+    
+    "dockerComposeFile": ["../docker-compose.yml"],
+    
+    // Changement du service pour refléter la racine du projet
+    "service": "backend",
+    
+    // Modification du workspaceFolder pour pointer vers la racine du projet
+    "workspaceFolder": "/workspace",
+    
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                //"python.linting.enabled": false,
+                //"python.linting.pylintEnabled": false,
+                //"python.linting.flake8Enabled": false,
+                //"python.formatting.provider": "none",
+                "editor.formatOnSave": false,
+                "editor.rulers": [],
+                "[python]": {
+                    "editor.codeActionsOnSave": {
+                       // "source.organizeImports": false
+                    }
+                }
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-azuretools.vscode-docker",
+                "github.copilot",
+                "yzhang.markdown-all-in-one"
+            ]
+        }
+    },
+    
+    "remoteUser": "root",
+    
+    //"postCreateCommand": "pip install black flake8 isort mypy pylint"
+    "postCreateCommand": ""
+}

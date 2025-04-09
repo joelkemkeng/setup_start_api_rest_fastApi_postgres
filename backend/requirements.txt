@@ -1,0 +1,47 @@
+# FastAPI et serveur ASGI
+fastapi==0.103.1         # Framework principal pour l'API
+uvicorn==0.23.2          # Serveur ASGI pour exécuter l'application FastAPI
+gunicorn==21.2.0         # Serveur HTTP pour le déploiement en production
+
+# Documentation API
+fastapi-rapidoc==0.1.7   # Support de RapiDoc pour la documentation API
+
+# ORM et base de données
+sqlalchemy==2.0.21       # ORM (Object-Relational Mapping) pour interagir avec la base de données
+alembic==1.12.0          # Outil de migration de base de données
+psycopg2-binary==2.9.7   # Pilote PostgreSQL pour Python
+asyncpg==0.28.0          # Client PostgreSQL asynchrone
+
+# Validation et sérialisation
+pydantic==2.3.0          # Validation des données et sérialisation
+pydantic[email]==2.3.0   # Support de validation pour les emails
+pydantic-settings==2.0.3 # Gestion des paramètres de configuration
+email-validator==2.0.0   # Validation des adresses email
+
+# JWT et authentification
+python-jose[cryptography]==3.3.0   # Implémentation JWT pour Python
+passlib[bcrypt]==1.7.4             # Bibliothèque pour hacher les mots de passe
+python-multipart==0.0.6            # Prise en charge des formulaires multipart
+
+# Utilitaires
+python-dotenv==1.0.0     # Chargement des variables d'environnement depuis un fichier .env
+tenacity==8.2.3          # Gestion des tentatives et des retries
+httpx==0.24.1            # Client HTTP asynchrone
+faker==19.6.2            # Génération de données de test
+
+# Géolocalisation
+geopy==2.3.0             # Calculs géographiques
+
+# Tests
+pytest==7.4.2            # Framework de test
+pytest-asyncio==0.21.1   # Support des tests asynchrones
+pytest-cov==4.1.0        # Mesure de la couverture de tests
+
+# Outils de développement
+black==23.9.1            # Formateur de code
+isort==5.12.0            # Tri des imports
+flake8==6.1.0            # Linter de code
+mypy==1.5.1              # Vérificateur de types statiques
+
+# Websocket pour messagerie en temps réel
+websockets==11.0.3       # Support des WebSockets pour la messagerie en temps réel

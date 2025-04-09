@@ -1,0 +1,248 @@
+@startuml Mobile Musician App
+
+' Définition du style
+skinparam classAttributeIconSize 0
+skinparam classFontStyle bold
+skinparam classFontSize 14
+skinparam classBackgroundColor LightBlue
+skinparam classArrowColor DarkBlue
+skinparam classBorderColor DarkBlue
+skinparam packageBackgroundColor LightGray
+
+package "Gestion des Utilisateurs" {
+    class Utilisateur {
+        - id: UUID [PK]
+        - nom_utilisateur: str
+        - email: str
+        - mot_de_passe_hash: str
+        - photo_profil: str
+        - biographie: str
+        - latitude: float
+        - longitude: float
+        - date_creation: datetime
+        - derniere_connexion: datetime
+        - actif: bool
+        --
+        + s_inscrire(): bool
+        + connexion(): str
+        + deconnexion(): bool
+        + maj_profil(): bool
+        + supprimer_compte(): bool
+        + changer_mot_de_passe(): bool
+        + obtenir_profil(): dict
+        + obtenir_evenements(): list
+        + chercher_evenements_proches(): list
+        + obtenir_conversations(): list
+    }
+
+    class UtilisateurInstrument {
+        - utilisateur_id: UUID [PK, FK]
+        - instrument_id: UUID [PK, FK]
+        - niveau: str
+        --
+        + ajouter(): bool
+        + maj_niveau(): bool
+        + supprimer(): bool
+    }
+
+    class UtilisateurGenre {
+        - utilisateur_id: UUID [PK, FK]
+        - genre_id: UUID [PK, FK]
+        --
+        + ajouter(): bool
+        + supprimer(): bool
+    }
+}
+
+package "Gestion des Événements" {
+    class Evenement {
+        - id: UUID [PK]
+        - titre: str
+        - description: str
+        - date_debut: datetime
+        - date_fin: datetime
+        - latitude: float
+        - longitude: float
+        - adresse: str
+        - createur_id: UUID [FK]
+        - type: str
+        - statut: str
+        - capacite_max: int
+        - url_image: str
+        - date_creation: datetime
+        --
+        + creer(): bool
+        + mettre_a_jour(): bool
+        + annuler(): bool
+        + obtenir_participants(): list
+        + obtenir_details(): dict
+        + recherche_par_lieu(lat, long, rayon): list
+        + recherche_par_date(debut, fin): list
+        + recherche_par_type(type): list
+    }
+
+    class Participation {
+        - id: UUID [PK]
+        - utilisateur_id: UUID [FK]
+        - evenement_id: UUID [FK]
+        - statut: str
+        - date_inscription: datetime
+        - instrument_id: UUID [FK]
+        --
+        + s_inscrire(): bool
+        + maj_statut(): bool
+        + annuler(): bool
+        + obtenir_details(): dict
+    }
+
+    class EvenementInstrument {
+        - evenement_id: UUID [PK, FK]
+        - instrument_id: UUID [PK, FK]
+        --
+        + ajouter(): bool
+        + supprimer(): bool
+    }
+}
+
+package "Système de Messagerie" {
+    class Conversation {
+        - id: UUID [PK]
+        - date_creation: datetime
+        - dernier_message: datetime
+        --
+        + creer(): bool
+        + obtenir_messages(): list
+        + obtenir_participants(): list
+        + ajouter_participant(id): bool
+        + supprimer_participant(id): bool
+    }
+
+    class ConversationUtilisateur {
+        - conversation_id: UUID [PK, FK]
+        - utilisateur_id: UUID [PK, FK]
+        --
+        + rejoindre(): bool
+        + quitter(): bool
+    }
+
+    class Message {
+        - id: UUID [PK]
+        - expediteur_id: UUID [FK]
+        - destinataire_id: UUID [FK]
+        - contenu: str
+        - date_envoi: datetime
+        - statut: str
+        - conversation_id: UUID [FK]
+        --
+        + envoyer(): bool
+        + marquer_comme_lu(): bool
+        + supprimer(): bool
+        + obtenir_details(): dict
+    }
+}
+
+package "Système de Notification" {
+    class Notification {
+        - id: UUID [PK]
+        - utilisateur_id: UUID [FK]
+        - type: str
+        - contenu: str
+        - date_creation: datetime
+        - statut: str
+        - reference_id: UUID
+        --
+        + creer(): bool
+        + marquer_comme_lu(): bool
+        + supprimer(): bool
+        + obtenir_details(): dict
+    }
+}
+
+package "Données de Référence" {
+    class Instrument {
+        - id: UUID [PK]
+        - nom: str
+        - categorie: str
+        - icone_url: str
+        --
+        + creer(): bool
+        + maj(): bool
+        + supprimer(): bool
+        + obtenir_details(): dict
+        + obtenir_utilisateurs_par_instrument(): list
+    }
+
+    class Genre {
+        - id: UUID [PK]
+        - nom: str
+        - description: str
+        --
+        + creer(): bool
+        + maj(): bool
+        + supprimer(): bool
+        + obtenir_details(): dict
+        + obtenir_utilisateurs_par_genre(): list
+    }
+}
+
+' Relations avec cardinalités
+Utilisateur "1" -- "0..*" Evenement : "crée"
+Utilisateur "0..*" -- "0..*" Evenement : "participe à\nvia Participation"
+Utilisateur "1" -- "0..*" Participation : "possède"
+Evenement "1" -- "0..*" Participation : "possède"
+Utilisateur "1" -- "0..*" Message : "envoie"
+Utilisateur "1" -- "0..*" Message : "reçoit"
+Utilisateur "1" -- "0..*" Notification : "reçoit"
+Utilisateur "0..*" -- "0..*" Instrument : "joue\nvia UtilisateurInstrument"
+Utilisateur "0..*" -- "0..*" Genre : "aime\nvia UtilisateurGenre"
+Evenement "0..*" -- "0..*" Instrument : "requiert\nvia EvenementInstrument"
+Utilisateur "0..*" -- "0..*" Conversation : "participe à\nvia ConversationUtilisateur"
+Conversation "1" -- "0..*" Message : "contient"
+
+' Connexions aux tables de liaison
+Utilisateur "1" -- "0..*" UtilisateurInstrument : "possède"
+Instrument "1" -- "0..*" UtilisateurInstrument : "utilisé par"
+Utilisateur "1" -- "0..*" UtilisateurGenre : "préfère"
+Genre "1" -- "0..*" UtilisateurGenre : "aimé par"
+Evenement "1" -- "0..*" EvenementInstrument : "nécessite"
+Instrument "1" -- "0..*" EvenementInstrument : "requis dans"
+Conversation "1" -- "0..*" ConversationUtilisateur : "inclut"
+Utilisateur "1" -- "0..*" ConversationUtilisateur : "impliqué dans"
+Instrument "1" -- "0..*" Participation : "utilisé dans"
+
+note top of Utilisateur
+  Entité centrale représentant les musiciens
+  Gère authentification, profil, et relations
+end note
+
+note top of Evenement
+  Représente événements musicaux
+  Inclut données de localisation pour carte
+end note
+
+note right of Conversation
+  Permet messagerie directe et groupe
+  Lie utilisateurs pour communication
+end note
+
+note bottom of Notification
+  Alerte utilisateurs des nouveaux messages,
+  changements d'événements, etc.
+end note
+
+note left of Participation
+  Suit quels utilisateurs rejoignent
+  quels événements et instruments joués
+end note
+
+note bottom of Instrument
+  Catalogue des instruments musicaux
+  avec catégorisation
+end note
+
+note bottom of Genre
+  Classification des styles musicaux
+  pour mise en relation des musiciens
+end note
+
+@enduml

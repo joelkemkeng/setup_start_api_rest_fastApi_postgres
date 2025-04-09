@@ -1,0 +1,14 @@
+{
+    "include": [
+        "app"
+    ],
+    "exclude": [
+        "**/node_modules",
+        "**/__pycache__"
+    ],
+    "pythonVersion": "3.9",
+    "pythonPlatform": "Linux",
+    "reportMissingImports": false,
+    "typeCheckingMode": "basic",
+    "useLibraryCodeForTypes": true
+}

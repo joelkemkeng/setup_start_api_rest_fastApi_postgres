@@ -1,0 +1,5 @@
+   # Forcer tous les scripts shell à utiliser LF
+   *.sh text eol=lf
+   
+   # Forcer tous les fichiers texte à être normalisés
+   * text=auto

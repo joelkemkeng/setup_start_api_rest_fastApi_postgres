@@ -1,0 +1,681 @@
+# Guide de Documentation API avec FastAPI
+
+Ce guide explique comment configurer et utiliser efficacement les différentes interfaces de documentation API disponibles avec FastAPI, ainsi que les bonnes pratiques pour créer des endpoints bien documentés.
+
+## Table des matières
+
+1. [Configuration des interfaces de documentation](#configuration-des-interfaces-de-documentation)
+   - [Swagger UI](#swagger-ui)
+   - [ReDoc](#redoc)
+   - [RapiDoc](#rapidoc)
+2. [Bonnes pratiques pour la documentation des endpoints](#bonnes-pratiques-pour-la-documentation-des-endpoints)
+3. [Exemples pratiques](#exemples-pratiques)
+4. [Dépannage](#dépannage)
+
+## Configuration des interfaces de documentation
+
+### Swagger UI
+
+Swagger UI est l'interface de documentation par défaut de FastAPI, accessible à l'URL `/docs`.
+
+#### Configuration de base
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(
+    title="Nom de votre API",
+    description="Description détaillée de votre API",
+    version="1.0.0",
+    docs_url="/docs",  # URL pour Swagger UI (par défaut: /docs)
+    redoc_url="/redoc",  # URL pour ReDoc (par défaut: /redoc)
+    openapi_url="/openapi.json",  # URL pour le schéma OpenAPI (par défaut: /openapi.json)
+)
+```
+
+#### Personnalisation avancée
+
+```python
+from fastapi import FastAPI
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.openapi.utils import get_openapi
+
+app = FastAPI(
+    title="Nom de votre API",
+    description="Description détaillée de votre API",
+    version="1.0.0",
+    docs_url=None,  # Désactive la route Swagger UI par défaut
+    redoc_url=None,  # Désactive la route ReDoc par défaut
+)
+
+# Fonction personnalisée pour générer le schéma OpenAPI
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    # Personnalisation du schéma OpenAPI
+    openapi_schema["info"]["x-logo"] = {
+        "url": "https://votre-logo.png",
+        "backgroundColor": "#FFFFFF",
+        "altText": "Logo de l'API",
+    }
+    
+    # Ajout de composants de sécurité
+    openapi_schema["components"] = {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Entrez votre token JWT ici",
+            }
+        },
+    }
+    
+    # Sécurité globale
+    openapi_schema["security"] = [{"bearerAuth": []}]
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+# Assignation de la fonction personnalisée
+app.openapi = custom_openapi
+
+# Route personnalisée pour Swagger UI
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title=f"{app.title} - Documentation Swagger",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
+        swagger_css_url="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css",
+        swagger_ui_parameters={
+            "defaultModelsExpandDepth": -1,
+            "docExpansion": "none",
+            "filter": True,
+            "showExtensions": True,
+            "showCommonExtensions": True,
+            "syntaxHighlight.theme": "monokai",
+            "tryItOutEnabled": True,
+            "persistAuthorization": True,
+            "displayRequestDuration": True,
+            "deepLinking": True,
+        },
+    )
+```
+
+### ReDoc
+
+ReDoc est une interface de documentation alternative, accessible à l'URL `/redoc`.
+
+#### Configuration de base
+
+```python
+from fastapi import FastAPI
+
+app = FastAPI(
+    title="Nom de votre API",
+    description="Description détaillée de votre API",
+    version="1.0.0",
+    redoc_url="/redoc",  # URL pour ReDoc (par défaut: /redoc)
+)
+```
+
+#### Personnalisation avancée
+
+```python
+from fastapi import FastAPI
+from fastapi.openapi.docs import get_redoc_html
+
+app = FastAPI(
+    title="Nom de votre API",
+    description="Description détaillée de votre API",
+    version="1.0.0",
+    redoc_url=None,  # Désactive la route ReDoc par défaut
+)
+
+# Route personnalisée pour ReDoc
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url="/openapi.json",
+        title=f"{app.title} - Documentation ReDoc",
+        redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js",
+        redoc_favicon_url="https://votre-favicon.png",
+    )
+```
+
+### RapiDoc
+
+RapiDoc est une interface de documentation moderne et interactive, accessible à l'URL `/rapidoc`.
+
+#### Installation
+
+```bash
+pip install fastapi-rapidoc
+```
+
+#### Configuration
+
+```python
+from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
+
+app = FastAPI(
+    title="Nom de votre API",
+    description="Description détaillée de votre API",
+    version="1.0.0",
+)
+
+# Route personnalisée pour RapiDoc
+@app.get("/rapidoc", include_in_schema=False)
+async def rapidoc_html():
+    return HTMLResponse(
+        """
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <script type="module" src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
+    <link rel="icon" type="image/png" href="https://votre-favicon.png"/>
+    <title>Nom de votre API - Documentation RapiDoc</title>
+    <style>
+        rapi-doc {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <rapi-doc
+        spec-url="/openapi.json"
+        theme="dark"
+        bg-color="#1a1a1a"
+        text-color="#fafafa"
+        primary-color="#00ff00"
+        render-style="read"
+        show-header="false"
+        show-info="true"
+        allow-authentication="true"
+        allow-server-selection="false"
+        allow-search="true"
+        allow-advanced-search="true"
+        allow-try="true"
+        regular-font="Roboto, sans-serif"
+        mono-font="Roboto Mono, monospace"
+    > </rapi-doc>
+</body>
+</html>
+        """
+    )
+```
+
+## Bonnes pratiques pour la documentation des endpoints
+
+Pour créer des endpoints bien documentés qui fonctionnent parfaitement avec toutes les interfaces de documentation, suivez ces bonnes pratiques :
+
+### 1. Utilisation des tags pour organiser les endpoints
+
+```python
+from fastapi import FastAPI, APIRouter
+
+app = FastAPI(
+    title="Nom de votre API",
+    description="Description détaillée de votre API",
+    version="1.0.0",
+    openapi_tags=[
+        {
+            "name": "Utilisateurs",
+            "description": "Opérations liées aux utilisateurs.",
+        },
+        {
+            "name": "Événements",
+            "description": "Opérations liées aux événements.",
+        },
+    ],
+)
+
+# Utilisation des tags dans les endpoints
+@app.get("/users/", tags=["Utilisateurs"])
+async def get_users():
+    return {"users": ["user1", "user2"]}
+
+@app.get("/events/", tags=["Événements"])
+async def get_events():
+    return {"events": ["event1", "event2"]}
+```
+
+### 2. Documentation complète des endpoints
+
+```python
+from fastapi import FastAPI, Path, Query, Body, Depends, HTTPException, status
+from typing import List, Optional
+from pydantic import BaseModel, Field
+
+app = FastAPI()
+
+# Modèles Pydantic avec documentation
+class UserBase(BaseModel):
+    email: str = Field(..., description="Adresse email de l'utilisateur")
+    full_name: str = Field(..., description="Nom complet de l'utilisateur")
+    is_active: bool = Field(True, description="Indique si l'utilisateur est actif")
+
+class UserCreate(UserBase):
+    password: str = Field(..., description="Mot de passe de l'utilisateur", min_length=8)
+
+class User(UserBase):
+    id: int = Field(..., description="Identifiant unique de l'utilisateur")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": 1,
+                "email": "user@example.com",
+                "full_name": "John Doe",
+                "is_active": True,
+            }
+        }
+
+# Endpoint avec documentation complète
+@app.post(
+    "/users/",
+    response_model=User,
+    status_code=status.HTTP_201_CREATED,
+    summary="Créer un nouvel utilisateur",
+    description="Crée un nouvel utilisateur avec les informations fournies.",
+    response_description="L'utilisateur créé avec succès",
+    tags=["Utilisateurs"],
+)
+async def create_user(
+    user: UserCreate = Body(
+        ...,
+        example={
+            "email": "user@example.com",
+            "full_name": "John Doe",
+            "password": "password123",
+            "is_active": True,
+        },
+        description="Données de l'utilisateur à créer",
+    )
+):
+    """
+    Crée un nouvel utilisateur dans le système.
+    
+    - **email**: Adresse email unique de l'utilisateur
+    - **full_name**: Nom complet de l'utilisateur
+    - **password**: Mot de passe sécurisé (minimum 8 caractères)
+    - **is_active**: Statut de l'utilisateur (actif par défaut)
+    
+    Retourne l'utilisateur créé avec son ID généré.
+    """
+    # Logique de création d'utilisateur
+    return {
+        "id": 1,
+        "email": user.email,
+        "full_name": user.full_name,
+        "is_active": user.is_active,
+    }
+```
+
+### 3. Utilisation des paramètres de requête et de chemin
+
+```python
+from fastapi import FastAPI, Path, Query, Depends, HTTPException, status
+from typing import List, Optional
+
+app = FastAPI()
+
+@app.get(
+    "/users/{user_id}",
+    summary="Obtenir un utilisateur par ID",
+    description="Récupère les informations d'un utilisateur spécifique par son ID.",
+    response_description="Informations de l'utilisateur",
+    tags=["Utilisateurs"],
+)
+async def get_user(
+    user_id: int = Path(
+        ...,
+        description="ID de l'utilisateur à récupérer",
+        example=1,
+        ge=1,
+    ),
+    include_inactive: bool = Query(
+        False,
+        description="Inclure les utilisateurs inactifs",
+        example=False,
+    ),
+):
+    """
+    Récupère un utilisateur par son ID.
+    
+    - **user_id**: ID unique de l'utilisateur (doit être positif)
+    - **include_inactive**: Si True, inclut les utilisateurs inactifs
+    
+    Retourne les informations de l'utilisateur ou une erreur 404 si non trouvé.
+    """
+    # Logique de récupération d'utilisateur
+    return {"user_id": user_id, "include_inactive": include_inactive}
+```
+
+### 4. Gestion des erreurs
+
+```python
+from fastapi import FastAPI, HTTPException, status
+from typing import Dict
+
+app = FastAPI()
+
+@app.get(
+    "/users/{user_id}",
+    responses={
+        200: {
+            "description": "Utilisateur trouvé avec succès",
+            "content": {
+                "application/json": {
+                    "example": {"id": 1, "name": "John Doe"}
+                }
+            }
+        },
+        404: {
+            "description": "Utilisateur non trouvé",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Utilisateur non trouvé"}
+                }
+            }
+        },
+        500: {
+            "description": "Erreur serveur interne",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Erreur serveur interne"}
+                }
+            }
+        }
+    },
+    tags=["Utilisateurs"],
+)
+async def get_user(user_id: int):
+    if user_id == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Utilisateur non trouvé",
+        )
+    return {"id": user_id, "name": "John Doe"}
+```
+
+### 5. Authentification et autorisation
+
+```python
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from typing import Optional
+from pydantic import BaseModel
+
+app = FastAPI()
+
+# Modèle de token
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# Schéma de sécurité
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+# Endpoint d'authentification
+@app.post(
+    "/token",
+    response_model=Token,
+    summary="Obtenir un token d'accès",
+    description="Authentifie un utilisateur et retourne un token JWT.",
+    tags=["Authentification"],
+)
+async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    """
+    Authentifie un utilisateur et retourne un token JWT.
+    
+    - **username**: Nom d'utilisateur
+    - **password**: Mot de passe
+    
+    Retourne un token JWT pour l'authentification.
+    """
+    # Logique d'authentification
+    return {"access_token": "fake-token", "token_type": "bearer"}
+
+# Endpoint protégé
+@app.get(
+    "/users/me",
+    summary="Obtenir le profil de l'utilisateur connecté",
+    description="Récupère les informations de l'utilisateur actuellement authentifié.",
+    tags=["Utilisateurs"],
+)
+async def read_users_me(token: str = Depends(oauth2_scheme)):
+    """
+    Récupère le profil de l'utilisateur connecté.
+    
+    Nécessite un token JWT valide dans l'en-tête Authorization.
+    """
+    return {"username": "current_user"}
+```
+
+## Exemples pratiques
+
+### Exemple complet d'un endpoint bien documenté
+
+```python
+from fastapi import FastAPI, Path, Query, Body, Depends, HTTPException, status
+from typing import List, Optional
+from pydantic import BaseModel, Field
+from datetime import datetime
+
+app = FastAPI(
+    title="API de Gestion d'Événements",
+    description="API pour la gestion d'événements musicaux",
+    version="1.0.0",
+    openapi_tags=[
+        {
+            "name": "Événements",
+            "description": "Opérations liées aux événements musicaux.",
+        },
+        {
+            "name": "Utilisateurs",
+            "description": "Opérations liées aux utilisateurs.",
+        },
+    ],
+)
+
+# Modèles Pydantic
+class EventBase(BaseModel):
+    title: str = Field(..., description="Titre de l'événement", example="Concert de Jazz")
+    description: str = Field(..., description="Description détaillée de l'événement")
+    date: datetime = Field(..., description="Date et heure de l'événement")
+    location: str = Field(..., description="Lieu de l'événement", example="Salle Pleyel, Paris")
+    capacity: int = Field(..., description="Capacité maximale de l'événement", ge=1, example=500)
+
+class EventCreate(EventBase):
+    pass
+
+class Event(EventBase):
+    id: int = Field(..., description="Identifiant unique de l'événement")
+    created_at: datetime = Field(..., description="Date de création de l'événement")
+    creator_id: int = Field(..., description="ID de l'utilisateur qui a créé l'événement")
+    
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": 1,
+                "title": "Concert de Jazz",
+                "description": "Un concert de jazz exceptionnel avec des artistes internationaux",
+                "date": "2023-12-31T20:00:00",
+                "location": "Salle Pleyel, Paris",
+                "capacity": 500,
+                "created_at": "2023-11-01T10:00:00",
+                "creator_id": 1,
+            }
+        }
+
+# Endpoint pour créer un événement
+@app.post(
+    "/events/",
+    response_model=Event,
+    status_code=status.HTTP_201_CREATED,
+    summary="Créer un nouvel événement",
+    description="Crée un nouvel événement musical avec les informations fournies.",
+    response_description="L'événement créé avec succès",
+    tags=["Événements"],
+)
+async def create_event(
+    event: EventCreate = Body(
+        ...,
+        example={
+            "title": "Concert de Jazz",
+            "description": "Un concert de jazz exceptionnel avec des artistes internationaux",
+            "date": "2023-12-31T20:00:00",
+            "location": "Salle Pleyel, Paris",
+            "capacity": 500,
+        },
+        description="Données de l'événement à créer",
+    )
+):
+    """
+    Crée un nouvel événement musical dans le système.
+    
+    - **title**: Titre de l'événement
+    - **description**: Description détaillée de l'événement
+    - **date**: Date et heure de l'événement
+    - **location**: Lieu de l'événement
+    - **capacity**: Capacité maximale de l'événement (doit être positive)
+    
+    Retourne l'événement créé avec son ID généré et les informations supplémentaires.
+    """
+    # Logique de création d'événement
+    return {
+        "id": 1,
+        "title": event.title,
+        "description": event.description,
+        "date": event.date,
+        "location": event.location,
+        "capacity": event.capacity,
+        "created_at": datetime.now(),
+        "creator_id": 1,
+    }
+
+# Endpoint pour récupérer un événement par ID
+@app.get(
+    "/events/{event_id}",
+    response_model=Event,
+    summary="Obtenir un événement par ID",
+    description="Récupère les informations d'un événement spécifique par son ID.",
+    response_description="Informations de l'événement",
+    tags=["Événements"],
+    responses={
+        200: {
+            "description": "Événement trouvé avec succès",
+        },
+        404: {
+            "description": "Événement non trouvé",
+            "content": {
+                "application/json": {
+                    "example": {"detail": "Événement non trouvé"}
+                }
+            }
+        }
+    }
+)
+async def get_event(
+    event_id: int = Path(
+        ...,
+        description="ID de l'événement à récupérer",
+        example=1,
+        ge=1,
+    )
+):
+    """
+    Récupère un événement par son ID.
+    
+    - **event_id**: ID unique de l'événement (doit être positif)
+    
+    Retourne les informations de l'événement ou une erreur 404 si non trouvé.
+    """
+    if event_id == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Événement non trouvé",
+        )
+    return {
+        "id": event_id,
+        "title": "Concert de Jazz",
+        "description": "Un concert de jazz exceptionnel avec des artistes internationaux",
+        "date": "2023-12-31T20:00:00",
+        "location": "Salle Pleyel, Paris",
+        "capacity": 500,
+        "created_at": "2023-11-01T10:00:00",
+        "creator_id": 1,
+    }
+```
+
+## Dépannage
+
+### Problèmes courants avec Swagger UI
+
+1. **En-tête manquant** : Assurez-vous d'utiliser les fichiers CDN officiels de Swagger UI.
+   ```python
+   swagger_js_url="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
+   swagger_css_url="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css",
+   ```
+
+2. **Erreur "Unable to render this definition"** : Vérifiez que votre schéma OpenAPI est valide et que la version est correctement définie.
+   ```python
+   openapi_schema["openapi"] = "3.0.2"
+   ```
+
+3. **Problèmes d'authentification** : Assurez-vous que les schémas de sécurité sont correctement définis.
+   ```python
+   openapi_schema["components"]["securitySchemes"] = {
+       "bearerAuth": {
+           "type": "http",
+           "scheme": "bearer",
+           "bearerFormat": "JWT",
+       }
+   }
+   ```
+
+### Problèmes courants avec ReDoc
+
+1. **Styles manquants** : Assurez-vous d'utiliser la bonne version de ReDoc.
+   ```python
+   redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js",
+   ```
+
+2. **Problèmes de rendu** : Vérifiez que votre schéma OpenAPI est compatible avec ReDoc.
+
+### Problèmes courants avec RapiDoc
+
+1. **Script non chargé** : Assurez-vous que le script RapiDoc est correctement chargé.
+   ```html
+   <script type="module" src="https://unpkg.com/rapidoc/dist/rapidoc-min.js"></script>
+   ```
+
+2. **Problèmes de style** : Vérifiez que les styles CSS sont correctement appliqués.
+   ```html
+   <style>
+       rapi-doc {
+           width: 100%;
+           height: 100vh;
+           display: flex;
+       }
+   </style>
+   ```
+
+---
+
+En suivant ces directives, vous serez en mesure de créer une API FastAPI bien documentée qui fonctionne parfaitement avec toutes les interfaces de documentation disponibles. 
