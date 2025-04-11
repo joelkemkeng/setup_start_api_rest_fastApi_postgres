@@ -1,5 +1,5 @@
 # app/models/user.py
-from sqlalchemy import Column, String, DateTime, Boolean
+from sqlalchemy import Column, String, DateTime, Boolean, Float, Text
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
@@ -14,3 +14,13 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
+    
+    # Profile information
+    profile_picture = Column(String, nullable=True)
+    biography = Column(Text, nullable=True)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    last_login = Column(DateTime, nullable=True)
+    
+    def __repr__(self):
+        return f"<User {self.username}>"

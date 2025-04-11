@@ -1,19 +1,5 @@
 # TuneLink Backend
 
-## Auteur
-
-- **Nom complet** : KEMKENG NGOUZA KEDI JOEL
-- **Nom court** : Joel Kemkeng
-- **Entreprise** : HasDigit (@HasDigit)
-- **Contact** :
-  - Email : kedikemkeng@gmail.com
-  - Email professionnel : kedikemkenh@hasdigit.com
-  - Téléphone : +33 7 51 54 27 74
-  - Téléphone alternatif : +237659403009
-- **Réseaux sociaux** :
-  - YouTube : [HasDigit](https://www.youtube.com/@hasDigit)
-  - LinkedIn : [Joel Kemkeng](https://www.linkedin.com/in/joelkemkeng/)
-
 Ce guide complet fournit toutes les informations nécessaires pour cloner, configurer, développer et contribuer au projet TuneLink Backend, que vous utilisiez VS Code avec Dev Containers ou un autre environnement de développement.
 
 ## Table des matières

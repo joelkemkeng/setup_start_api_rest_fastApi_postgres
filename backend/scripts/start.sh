@@ -3,6 +3,12 @@ set -e
 
 cd /workspace/backend
 
+# Vérifier si le dossier migrations existe, sinon l'initialiser
+if [ ! -d "migrations" ]; then
+    echo "Migrations directory not found. Initializing Alembic..."
+    alembic init migrations
+fi
+
 # Attendre que la base de données soit prête
 echo "Waiting for database to be ready..."
 sleep 5

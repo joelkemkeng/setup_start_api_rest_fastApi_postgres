@@ -168,6 +168,17 @@ async def custom_swagger_ui_html() -> Any:
             "filter": True,
             "tryItOutEnabled": True,
             "persistAuthorization": True,
+            "displayOperationId": False,
+            "withCredentials": True,
+            "defaultModelRendering": "example",
+            "syntaxHighlight": {
+                "activate": True,
+                "theme": "monokai"
+            },
+            "operationsSorter": "method",
+            "tagsSorter": "alpha",
+            "requestSnippetsEnabled": True,
+            "tryItOutEnabled": True
         },
     )
     
@@ -382,7 +393,7 @@ def custom_openapi() -> Dict[str, Any]:
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
-            "description": "Entrez votre token JWT ici",
+            "description": f"Entrez votre token JWT ici. Clé secrète (dev): {settings.SECRET_KEY}",
         }
     }
     
@@ -411,8 +422,27 @@ def custom_openapi() -> Dict[str, Any]:
         }
     }
 
-    # Ajouter la sécurité JWT
+    # Ajouter la sécurité JWT globalement pour tous les endpoints
     openapi_schema["security"] = [{"bearerAuth": []}]
+    
+    # Définir explicitement les routes qui nécessitent ou non l'authentification
+    if "paths" in openapi_schema:
+        # 1. D'abord, définir certaines routes comme publiques (pas d'authentification requise)
+        for path in openapi_schema["paths"]:
+            # Routes d'authentification et d'inscription publiques
+            if path.endswith("/auth/login") or path.endswith("/users/register"):
+                for method in openapi_schema["paths"][path]:
+                    openapi_schema["paths"][path][method]["security"] = []
+            
+            # Route de profil public (accessible sans authentification)
+            elif "/users/profile/" in path:
+                for method in openapi_schema["paths"][path]:
+                    openapi_schema["paths"][path][method]["security"] = []
+            
+            # 2. Ensuite, forcer l'authentification sur les endpoints protégés
+            elif path.endswith("/users/me") or path.endswith("/users/me/instruments") or path.endswith("/users/me/genres") or path.endswith("/auth/logout"):
+                for method in openapi_schema["paths"][path]:
+                    openapi_schema["paths"][path][method]["security"] = [{"bearerAuth": []}]
 
     # Ajouter le schéma OpenAPI à l'instance de l'application
     app.openapi_schema = openapi_schema
@@ -468,6 +498,7 @@ async def custom_http_exception_handler(request: Request, exc: StarletteHTTPExce
         "code": exc.status_code,
         "message": str(exc.detail),
         "data": None,
+        "meta": None,
         "errors": None
     }
     
@@ -498,6 +529,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         "code": status.HTTP_422_UNPROCESSABLE_ENTITY,
         "message": "Erreur de validation des données",
         "data": None,
+        "meta": None,
         "errors": errors
     }
     
