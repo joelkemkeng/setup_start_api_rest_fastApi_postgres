@@ -131,7 +131,12 @@ if settings.BACKEND_CORS_ORIGINS:
 #########################################################
 # Montage des fichiers statiques
 #########################################################
-app.mount("/static", StaticFiles(directory="static"), name="static")
+from pathlib import Path
+
+# Utilise un chemin absolu pour le dossier static afin d'eviter les erreurs
+# lors de l'execution depuis un autre repertoire que backend
+static_dir = Path(__file__).resolve().parent.parent / "static"
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 #########################################################
 
 
